@@ -1,6 +1,6 @@
 ---
 name: oc-spec
-description: Deep product/software specification interviewer. Use when user wants to create or refine a product spec through in-depth interviews. Triggers on requests to interview about a spec, refine a spec, create a spec through questions, or when user shares a SPEC file and asks for detailed questioning. Outputs a spec file ready to serve as a development plan starting point.
+description: Deep product/software specification interviewer using Claude's native ask tool. Use when user wants to create or refine a product spec through in-depth interviews. Triggers on requests to interview about a spec, refine a spec, create a spec through questions, or when user shares a SPEC file and asks for detailed questioning. Uses ask tool for interactive questioning. Outputs a spec file ready to serve as a development plan starting point.
 ---
 
 # OC-Spec: Deep Specification Interviewer
@@ -27,12 +27,32 @@ mkdir -p .claude/spec
 
 1. **Check `.claude/spec/`** for existing SPEC or create directory if needed
 2. **Read existing SPEC** (if found) or acknowledge starting from scratch
-3. **Interview systematically** - ask multiple deep questions per round
+3. **Interview using native ask tool** - use Claude's built-in ask tool for all questions
 4. **Track coverage** - ensure all critical areas are addressed
 5. **Complete when** - user confirms AND all key areas covered
 6. **Output SPEC** - write to `.claude/spec/` as development plan starting point
 
 ## Interview Strategy
+
+### Using Native Ask Tool
+
+**MUST use Claude's native `ask` tool (or `AskUserQuestionTool`) for all interview questions.**
+
+- Each question or question group should be a separate ask call
+- Wait for user response before proceeding to next question
+- Use ask tool to confirm completion before generating final SPEC
+
+Example flow:
+```
+ask("What are you building and what problem does it solve?")
+→ user responds
+ask("What are the hard technical constraints? What existing systems must this integrate with?")
+→ user responds
+... continue until complete
+ask("I believe we've covered the critical areas. Ready to generate the spec?")
+→ user confirms
+→ write SPEC to .claude/spec/
+```
 
 ### Question Principles
 
@@ -89,17 +109,17 @@ mkdir -p .claude/spec
 ## Interview Execution
 
 ### Opening
+Use ask tool to start:
 ```
-I'll interview you to build a comprehensive spec. I'll ask multiple deep questions 
-per round, focusing on decisions that impact implementation. Let me know when you 
-feel we've covered enough, but I'll also flag if I think critical areas remain.
+ask("I'll interview you to build a comprehensive spec. I'll ask deep questions focusing on decisions that impact implementation. Let me know when you feel we've covered enough, but I'll also flag if I think critical areas remain.
 
 [If SPEC provided]: I've read the spec. Let me start with questions about [area].
-[If from scratch]: Let's start with the core concept. What are you building and why?
+[If from scratch]: Let's start - what are you building and why?")
 ```
 
 ### During Interview
-- Group related questions together
+- Use ask tool for each question round
+- Group related questions (3-5) in a single ask call
 - Explicitly note when moving to a new category
 - Summarize key decisions after each round
 - Flag assumptions that need validation
@@ -115,7 +135,10 @@ Before concluding, verify coverage:
 - [ ] Performance expectations set
 - [ ] Extension points identified
 
-Ask user: "I believe we've covered the critical areas. Ready to generate the spec, or are there areas you want to explore further?"
+Use ask tool for final confirmation:
+```
+ask("I believe we've covered the critical areas. Ready to generate the spec, or are there areas you want to explore further?")
+```
 
 ## SPEC Output Format
 
