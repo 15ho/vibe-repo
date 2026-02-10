@@ -41,38 +41,35 @@ deploy:
 	for skill_dir in $(CLAUDE_SKILLS_SRC)/*/; do \
 		if [ -d "$$skill_dir" ]; then \
 			skill_name=$$(basename "$$skill_dir"); \
-			src_file="$$skill_dir/Skill.md"; \
 			dest_dir="$(TARGET)/$(CLAUDE_SKILLS_DEST)/$$skill_name"; \
-			dest_file="$$dest_dir/Skill.md"; \
-			if [ -f "$$src_file" ]; then \
-				if [ -f "$$dest_file" ]; then \
-					while true; do \
-						printf "文件 $$dest_file 已存在，是否覆盖？[y/n]: "; \
-						read answer; \
-						case "$$answer" in \
-							[yY]) \
-								mkdir -p "$$dest_dir"; \
-								cp "$$src_file" "$$dest_file"; \
-								echo "已覆盖: $$dest_file"; \
-								deployed=$$((deployed + 1)); \
-								break; \
-								;; \
-							[nN]) \
-								echo "已跳过: $$dest_file"; \
-								skipped=$$((skipped + 1)); \
-								break; \
-								;; \
-							*) \
-								echo "请输入 y 或 n"; \
-								;; \
-						esac; \
-					done; \
-				else \
-					mkdir -p "$$dest_dir"; \
-					cp "$$src_file" "$$dest_file"; \
-					echo "已部署: $$dest_file"; \
-					deployed=$$((deployed + 1)); \
-				fi; \
+			if [ -d "$$dest_dir" ]; then \
+				while true; do \
+					printf "目录 $$dest_dir 已存在，是否覆盖？[y/n]: "; \
+					read answer; \
+					case "$$answer" in \
+						[yY]) \
+							rm -rf "$$dest_dir"; \
+							mkdir -p "$$dest_dir"; \
+							cp -r "$$skill_dir"* "$$dest_dir/"; \
+							echo "已覆盖: $$dest_dir"; \
+							deployed=$$((deployed + 1)); \
+							break; \
+							;; \
+						[nN]) \
+							echo "已跳过: $$dest_dir"; \
+							skipped=$$((skipped + 1)); \
+							break; \
+							;; \
+						*) \
+							echo "请输入 y 或 n"; \
+							;; \
+					esac; \
+				done; \
+			else \
+				mkdir -p "$$dest_dir"; \
+				cp -r "$$skill_dir"* "$$dest_dir/"; \
+				echo "已部署: $$dest_dir"; \
+				deployed=$$((deployed + 1)); \
 			fi; \
 		fi; \
 	done; \
