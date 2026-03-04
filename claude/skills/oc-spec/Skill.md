@@ -61,6 +61,7 @@ ask("I believe we've covered the critical areas. Ready to generate the spec?")
 - Avoid obvious questions - dig into non-trivial tradeoffs
 - Ask multiple related questions per round (3-5 questions)
 - Build on previous answers to go deeper
+- Ask in Chinese
 
 ### Question Categories (Priority Order)
 
