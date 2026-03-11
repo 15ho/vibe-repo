@@ -1,6 +1,6 @@
 ---
 name: oc-spec
-description: Deep product/software specification interviewer using Claude's native ask tool. Use when user wants to create or refine a product spec through in-depth interviews. Triggers on requests to interview about a spec, refine a spec, create a spec through questions, or when user shares a SPEC file and asks for detailed questioning. Uses ask tool for interactive questioning. Outputs a spec file ready to serve as a development plan starting point.
+description: Deep product/software specification interviewer. Use when user wants to create or refine a product spec through in-depth interviews. Triggers on requests to interview about a spec, refine a spec, create a spec through questions, or when user shares a SPEC file and asks for detailed questioning. Also trigger when users want to "think through requirements", "figure out what to build", "clarify the design", "ask key questions before coding", or any request to systematically explore and document what to build before building it. Outputs a spec file ready to serve as a development plan starting point.
 ---
 
 # OC-Spec: Deep Specification Interviewer
@@ -13,10 +13,7 @@ Create comprehensive product specifications through systematic, in-depth intervi
 
 - **Read**: Look for existing specs in `.claude/spec/`
 - **Create**: Always write new specs to `.claude/spec/`
-- **Naming**: Use descriptive names - this name will also be used by the corresponding plan file
-  - `.claude/spec/SPEC.md` (default for single spec projects)
-  - `.claude/spec/[feature-name].md` (for multi-spec projects)
-  - Example: `.claude/spec/auth.md` → later generates `.claude/plan/auth.md`
+- **Naming**: Use descriptive names like `.claude/spec/SPEC.md` or `.claude/spec/[feature-name]-spec.md`
 
 Before starting, ensure the directory exists:
 ```bash
@@ -27,40 +24,24 @@ mkdir -p .claude/spec
 
 1. **Check `.claude/spec/`** for existing SPEC or create directory if needed
 2. **Read existing SPEC** (if found) or acknowledge starting from scratch
-3. **Interview using native ask tool** - use Claude's built-in ask tool for all questions
+3. **Interview systematically** - ask multiple deep questions per round
 4. **Track coverage** - ensure all critical areas are addressed
 5. **Complete when** - user confirms AND all key areas covered
 6. **Output SPEC** - write to `.claude/spec/` as development plan starting point
 
 ## Interview Strategy
 
-### Using Native Ask Tool
-
-**MUST use Claude's native `ask` tool (or `AskUserQuestionTool`) for all interview questions.**
-
-- Each question or question group should be a separate ask call
-- Wait for user response before proceeding to next question
-- Use ask tool to confirm completion before generating final SPEC
-
-Example flow:
-```
-ask("What are you building and what problem does it solve?")
-→ user responds
-ask("What are the hard technical constraints? What existing systems must this integrate with?")
-→ user responds
-... continue until complete
-ask("I believe we've covered the critical areas. Ready to generate the spec?")
-→ user confirms
-→ write SPEC to .claude/spec/
-```
-
 ### Question Principles
 
 - Ask questions that **impact implementation decisions** - things that must be decided or ruled out early
 - Prioritize **feasibility first**, then **extensibility**
 - Avoid obvious questions - dig into non-trivial tradeoffs
-- Ask multiple related questions per round (3-5 questions)
+- **Strictly limit each round to 3-5 questions.** This is critical for interview quality — dumping 10+ questions at once overwhelms the user and degrades the conversation into a checklist. Even when reviewing an existing spec with many gaps, pick the 3-5 most important questions for this round and save the rest for later rounds. A focused conversation that goes 4-5 rounds produces far better answers than a single massive question dump.
 - Build on previous answers to go deeper
+
+**Good vs bad question example:**
+- Bad (too generic): "What's your data model?"
+- Good (specific, decision-forcing): "Will document content live in the database itself or in object storage with only metadata in the DB? This directly affects how you implement full-text search and version history."
 
 ### Question Categories (Priority Order)
 
@@ -109,21 +90,32 @@ ask("I believe we've covered the critical areas. Ready to generate the spec?")
 ## Interview Execution
 
 ### Opening
-Use ask tool to start:
 ```
-ask("I'll interview you to build a comprehensive spec. I'll ask deep questions focusing on decisions that impact implementation. Let me know when you feel we've covered enough, but I'll also flag if I think critical areas remain.
+I'll interview you to build a comprehensive spec. I'll ask multiple deep questions 
+per round, focusing on decisions that impact implementation. Let me know when you 
+feel we've covered enough, but I'll also flag if I think critical areas remain.
 
 [If SPEC provided]: I've read the spec. Let me start with questions about [area].
-[If from scratch]: Let's start - what are you building and why?")
+[If from scratch]: Let's start with the core concept. What are you building and why?
 ```
 
 ### During Interview
-- Use ask tool for each question round
-- Group related questions (3-5) in a single ask call
+- Group related questions together
 - Explicitly note when moving to a new category
 - Summarize key decisions after each round
 - Flag assumptions that need validation
 - Note areas marked for future consideration vs current scope
+- **Show coverage progress at the end of each round** to give the user a sense of where we are and what's coming next. Format:
+  ```
+  Coverage: Core Scope ✅ | Data Model ✅ | Edge Cases → next | UX ○ | Security ○ | Performance ○ | Extensibility ○
+  ```
+- **Use the `AskUserQuestion` tool to present each round's questions.** Each question becomes a `question` in the tool, with 2-4 common options for quick selection (the tool automatically includes an "Other" option for free-form input). This lowers the barrier to answering while preserving flexibility. Max 4 questions per round (tool limit). Example:
+  ```
+  question: "Which storage approach do you prefer?"
+  options: ["Relational DB (PostgreSQL/MySQL)", "Document DB (MongoDB)", "Filesystem + metadata index"]
+  // User can pick one, or choose Other to type a custom answer
+  ```
+  After asking, do not continue with any further actions — no next-round questions, no SPEC generation. Wait for the user's response, then decide what to ask next.
 
 ### Completion Check
 Before concluding, verify coverage:
@@ -135,10 +127,7 @@ Before concluding, verify coverage:
 - [ ] Performance expectations set
 - [ ] Extension points identified
 
-Use ask tool for final confirmation:
-```
-ask("I believe we've covered the critical areas. Ready to generate the spec, or are there areas you want to explore further?")
-```
+Ask user: "I believe we've covered the critical areas. Ready to generate the spec, or are there areas you want to explore further?"
 
 ## SPEC Output Format
 
@@ -200,3 +189,4 @@ Key decisions made during spec creation with rationale.
 - Include rationale for non-obvious decisions
 - Mark uncertainties explicitly rather than glossing over them
 - Keep technical jargon appropriate to the team's level
+- **Match the user's language.** If the user communicates in Chinese, ask questions and write the spec in Chinese. If in English, use English. Mirror whatever language the user is using.
